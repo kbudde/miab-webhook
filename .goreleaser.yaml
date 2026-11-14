@@ -1,0 +1,56 @@
+version: 2
+
+project_name: miab-webhook
+
+builds:
+  - id: webhook
+    main: .
+    binary: webhook
+    env:
+      - CGO_ENABLED=0
+    goos:
+      - linux
+    goarch:
+      - amd64
+      - arm64
+      - arm
+    goarm:
+      - "7"
+    ldflags:
+      - -s
+      - -w
+
+dockers_v2:
+  - id: webhook
+    dockerfile: Dockerfile
+    images:
+      - ghcr.io/{{ or .Env.GITHUB_REPOSITORY "kbudde/miab-webhook" }}
+    tags:
+      - "v{{ .Major }}"
+      - "v{{ .Major }}.{{ .Minor }}"
+      - "v{{ .Major }}.{{ .Minor }}.{{ .Patch }}"
+      - "latest"
+    platforms:
+      - linux/amd64
+      - linux/arm64
+      - linux/arm/v7
+    extra_files:
+      - main.go
+      - go.mod
+      - go.sum
+    labels:
+      org.opencontainers.image.title: "{{ .ProjectName }}"
+      org.opencontainers.image.version: "{{ .Version }}"
+      org.opencontainers.image.source: "{{ .GitURL }}"
+    annotations:
+      org.opencontainers.image.description: "Mail-in-a-Box ACME webhook for cert-manager"
+
+snapshot:
+  version_template: "{{ incpatch .Version }}-dev"
+
+changelog:
+  sort: asc
+  filters:
+    exclude:
+      - "^docs:"
+      - "^test:"

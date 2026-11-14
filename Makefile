@@ -1,7 +1,7 @@
 OS ?= $(shell go1.26 env GOOS)
 ARCH ?= $(shell go1.26 env GOARCH)
 
-IMAGE_NAME ?= "maxweiss/miab-webhook"
+IMAGE_NAME ?= "ghcr.io/kbudde/miab-webhook"
 IMAGE_TAG ?= "latest"
 
 OUT := $(shell pwd)/_out

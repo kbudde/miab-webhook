@@ -13,7 +13,7 @@ certManager:
   serviceAccountName: cert-manager
 
 image:
-  repository: maxweiss/miab-webhook
+  repository: ghcr.io/kbudde/miab-webhook
   tag: latest
   pullPolicy: Always
 

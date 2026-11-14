@@ -1,0 +1,25 @@
+# Go
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+*.test
+*.out
+/vendor/
+
+# GoReleaser
+/dist/
+
+# Make / local build artifacts
+/_out/
+/webhook
+/miab-webhook
+/kubebuilder-tools.tar.gz
+/_test/
+
+# Editors and OS
+.idea/
+.vscode/
+*.swp
+.DS_Store

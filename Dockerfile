@@ -1,35 +1,28 @@
-FROM golang:1-alpine AS builder
+# syntax=docker/dockerfile:1
 
-RUN apk update && \
-    apk upgrade && \
-    apk add git ca-certificates tzdata && \
-    mkdir -p /workspace && \
-    update-ca-certificates
+# Build stage. It always runs on the build platform so the Go toolchain can
+# cross-compile for every target platform without needing emulators.
+FROM --platform=$BUILDPLATFORM golang:1.26-alpine AS builder
 
-WORKDIR /workspace
+ARG TARGETOS
+ARG TARGETARCH
+ARG TARGETVARIANT
 
-COPY . .
+WORKDIR /src
 
-RUN go get cloud.google.com/go/compute/metadata && \
-    go mod download && \
-    go mod tidy
+COPY main.go go.mod go.sum ./
 
-RUN env CGO_ENABLED=0 go build -o webhook -ldflags '-s -w -extldflags "-static"' . && \
-    chown root:root /workspace/webhook && \
-    chmod 555 /workspace/webhook
+RUN --mount=type=cache,target=/go/pkg/mod \
+    CGO_ENABLED=0 GOOS=${TARGETOS} GOARCH=${TARGETARCH} GOARM=${TARGETVARIANT#v} \
+    go build -trimpath -ldflags "-s -w" -o /out/webhook .
 
-# Build from alpine instead of scratch in order to test/diagnose
-#FROM alpine
+# Runtime stage. The binary is fully static (CGO_ENABLED=0) and embeds the
+# timezone database and root CA certificates, so a scratch image is enough.
 FROM scratch
 
-COPY --chown=0:0 --from=builder /workspace/webhook /webhook
-
-# For alpine build
-#RUN chmod 555 /webhook && apk update && apk --no-cache upgrade && apk add --no-cache ca-certificates tzdata && update-ca-certificates
-
-# If you are building for alpine and want to use system ca certs and tzdata, comment out the "time/tzdata" and "github.com/breml/rootcerts" imports at the top of main.go
+COPY --from=builder /out/webhook /webhook
 
 USER 1000
 
-CMD ["--secure-port=8443"]
 ENTRYPOINT ["/webhook"]
+CMD ["--secure-port=8443"]
